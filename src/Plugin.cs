@@ -17,7 +17,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 {
 	public override string ModuleName => "K4-GOTV";
 	public override string ModuleDescription => "Advanced GOTV handler with Discord and FTP integration";
-	public override string ModuleVersion => "2.1.6";
+	public override string ModuleVersion => "2.1.7-diagnostic.1";
 	public override string ModuleAuthor => "K4ryuu @ KitsuneLab";
 
 	public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -91,9 +91,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 		});
 
 		EnsureDemoDirectory(Config);
-		Logger.LogInformation("K4-GOTV {Version} loaded: recording directly in {DemoDirectory} using configured filenames and absolute paths.", ModuleVersion, DemoDirectory);
-		// Retry when CSTV was not ready at player activation or round start.
-		AddTimer(5.0f, TryAutoRecord, TimerFlags.REPEAT);
+		Logger.LogInformation("K4-GOTV {Version} loaded: recording directly in {DemoDirectory} using configured filenames and absolute paths. Diagnostic build: no file confirmation polling, confirmation timeout or periodic recording retry.", ModuleVersion, DemoDirectory);
 
 		if (Config.AutoRecord.StopOnIdle)
 		{
@@ -222,7 +220,6 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 		// Use the final absolute path and configured filename from the start.
 		string commandPath = DemoPaths.GetRecordingPath(DemoDirectory, $"{fileName}.dem");
 		recordingPaths = [commandPath];
-		string[] candidatePaths = recordingPaths;
 		forwardedRecordPath = commandPath;
 		int generation = ++recordingGeneration;
 		Server.NextWorldUpdate(() =>
@@ -231,32 +228,11 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 				return;
 			Logger.LogInformation("Requesting demo recording: {DemoPath}", commandPath);
 			Server.ExecuteCommand($"tv_record \"{commandPath}\"");
+			AnnounceRecordingRequest();
 		});
-		// A queued command is not proof that the engine actually opened a demo.
-		float timeout = Math.Max(30f, (ConVar.Find("tv_delay")?.GetPrimitiveValue<int>() ?? 0) + 15f);
-		CounterStrikeSharp.API.Modules.Timers.Timer? confirmationTimer = null;
-		confirmationTimer = AddTimer(1f, () =>
-		{
-			if (generation != recordingGeneration)
-			{
-				confirmationTimer?.Kill();
-				return;
-			}
-			string? recordedPath = candidatePaths.FirstOrDefault(path => File.Exists(path) && new FileInfo(path).Length > 0);
-			if (recordedPath != null)
-			{
-				Logger.LogInformation("Demo recording confirmed: {DemoPath}", recordedPath);
-				AnnounceRecordingStart();
-				confirmationTimer?.Kill();
-			}
-			else if (Server.EngineTime - DemoStartTime >= timeout)
-			{
-				Logger.LogError("CSTV did not create a non-empty demo. Checked: {DemoPaths}. Check tv_enable 1, tv_status, directory permissions and the server's CounterStrikeSharp installation. Reload the map after enabling CSTV.", string.Join(", ", candidatePaths));
-				Server.ExecuteCommand("tv_stoprecord");
-				ResetVariables();
-				confirmationTimer?.Kill();
-			}
-		}, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
+		// Diagnostic build: leave recording to the engine without polling the file
+		// or stopping/retrying because its creation could not be confirmed.
+		// An unsuccessful request stays reserved until a stop or map reset.
 		return HookResult.Stop;
 	}
 
@@ -578,7 +554,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 		}
 	}
 
-	private void AnnounceRecordingStart()
+	private void AnnounceRecordingRequest()
 	{
 		if (string.IsNullOrEmpty(fileName))
 			return;
@@ -589,7 +565,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 				continue;
 
 			string prefix = Localizer?.ForPlayer(target, "k4.general.prefix") ?? "{silver}[K4-GOTV]";
-			string message = Localizer?.ForPlayer(target, "k4.demo.start", fileName) ?? $"Recording started for demo {fileName}";
+			string message = Localizer?.ForPlayer(target, "k4.demo.start", fileName) ?? $"Recording requested for demo {fileName}";
 			target.PrintToChat($"{prefix} {message}");
 		}
 	}

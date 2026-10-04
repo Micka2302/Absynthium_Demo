@@ -1,3 +1,10 @@
+-- 2026.09.26 - v2.1.7-diagnostic.1
+
+- diagnostic: Remove the recording file confirmation timer, its forced stop on timeout, and the five-second automatic retry timer to isolate reported recording stutter
+- diagnostic: Announce a recording request when dispatched, without claiming file creation is confirmed
+- keep: Absolute recording paths, configured filenames, idle stop, finalization/uploads and .NET 10 / CounterStrikeSharp API 1.0.375
+- limitation: Failed starts require a stop/reset before another request; server performance and demo playback still require a live comparison with 2.1.6
+
 -- 2026.09.24 - v2.1.6
 
 - fix: Use general.default-file-name for automatic recordings instead of hardcoding autodemo
