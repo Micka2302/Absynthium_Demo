@@ -2,7 +2,7 @@ using FluentFTP;
 using FluentFTP.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace K4GOTV;
+namespace Absynthium_Demo;
 
 public class UploadService
 {
@@ -23,7 +23,9 @@ public class UploadService
 			client.Config.EncryptionMode = _config.Ftp.UseSftp ? FtpEncryptionMode.Implicit : FtpEncryptionMode.None;
 			client.Config.ValidateAnyCertificate = true;
 			await client.AutoConnect();
-			await client.UploadFile(filePath, remoteFilePath);
+			var status = await client.UploadFile(filePath, remoteFilePath);
+			if (status != FtpStatus.Success)
+				throw new IOException($"FTP upload did not succeed: {status}");
 			string protocol = _config.Ftp.UseSftp ? "sftp" : "ftp";
 			return $"{protocol}://{_config.Ftp.Host}/{remoteFilePath}";
 		}

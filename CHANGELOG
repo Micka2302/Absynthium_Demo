@@ -1,3 +1,13 @@
+-- 2026.10.06 - Absynthium_Demo v3.0.0
+
+- breaking: Rename the plugin, DLL, projects, namespace and translations to Absynthium_Demo
+- feat: Enable automatic recording by default; !demo / css_demo privately reports the current tracked demo filename or that no recording is active
+- feat: Embed the fully customizable Discord payload in configuration version 14, removing the separate payload.json file
+- improvement: Use a compact Discord layout, omit unavailable download information, preserve JSON escaping and display durations beyond one hour
+- feat: Announce recording start and map-end stop in chat; keep upload status in server logs
+- migration: Preserve existing recording, upload, cleanup and retention settings; document configuration and custom payload migration
+- test: Cover embedded payload rendering, legacy settings, configuration round trips and existing demo file handling
+
 -- 2026.09.26 - v2.1.7-diagnostic.1
 
 - diagnostic: Remove the recording file confirmation timer, its forced stop on timeout, and the five-second automatic retry timer to isolate reported recording stutter

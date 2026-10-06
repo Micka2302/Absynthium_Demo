@@ -1,0 +1,110 @@
+{
+  "general": {
+    "minimum-demo-duration": 5,
+    "delete-demo-after-upload": true,
+    "delete-zipped-demo-after-upload": true,
+    "delete-every-demo-from-server-after-server-start": false,
+    "log-uploads": true,
+    "log-deletions": true,
+    "default-file-name": "Absynthium_Demo",
+    "regular-file-naming-pattern": "{fileName}_{map}_{date}_{time}",
+    "crop-rounds-file-naming-pattern": "{fileName}_{map}_round{round}_{date}_{time}",
+    "demo-directory": "discord_demos",
+    "auto-cleanup-enabled": false,
+    "auto-cleanup-interval-minutes": 60,
+    "auto-cleanup-file-age-hours": 48
+  },
+  "discord": {
+    "webhook-url": "",
+    "webhook-avatar": "",
+    "webhook-upload-file": true,
+    "webhook-name": "Absynthium_Demo",
+    "embed-title": "Démo disponible",
+    "message-text": "",
+    "server-boost": 0,
+    "payload": {
+      "username": "{webhook_name}",
+      "avatar_url": "{webhook_avatar}",
+      "content": "{message_text}",
+      "embeds": [
+        {
+          "title": "{embed_title}",
+          "description": "Enregistrement terminé sur **{server_name}**.",
+          "color": 5763719,
+          "fields": [
+            {
+              "name": "Carte",
+              "value": "{map}",
+              "inline": true
+            },
+            {
+              "name": "Durée",
+              "value": "{length}",
+              "inline": true
+            },
+            {
+              "name": "Joueurs",
+              "value": "{player_count}",
+              "inline": true
+            },
+            {
+              "name": "Round",
+              "value": "{round}",
+              "inline": true
+            },
+            {
+              "name": "Date",
+              "value": "{date} à {time}",
+              "inline": true
+            },
+            {
+              "name": "Taille de l'archive",
+              "value": "{fileSizeInKB} Ko",
+              "inline": true
+            },
+            {
+              "name": "Fichier",
+              "value": "`{fileName}.dem`\nArchive : `{fileName}.zip`",
+              "inline": false
+            },
+            {
+              "name": "Téléchargement FTP",
+              "value": "{ftp_link}",
+              "inline": false
+            },
+            {
+              "name": "Information",
+              "value": "{file_size_warning}",
+              "inline": false
+            }
+          ],
+          "footer": {
+            "text": "Absynthium_Demo • {server_name}"
+          },
+          "timestamp": "{iso_timestamp}"
+        }
+      ]
+    }
+  },
+  "auto-record": {
+    "enabled": true,
+    "crop-rounds": false,
+    "stop-on-idle": false,
+    "record-warmup": true,
+    "min-player-start-record": 2,
+    "idle-player-count-threshold": 0,
+    "idle-time-seconds": 300
+  },
+  "ftp": {
+    "enabled": false,
+    "host": "",
+    "port": 21,
+    "username": "",
+    "password": "",
+    "remote-directory": "/",
+    "use-sftp": false,
+    "retention-enabled": false,
+    "retention-hours": 72
+  },
+  "ConfigVersion": 14
+}

@@ -1,4 +1,4 @@
-namespace K4GOTV;
+namespace Absynthium_Demo;
 
 internal static class DemoPaths
 {

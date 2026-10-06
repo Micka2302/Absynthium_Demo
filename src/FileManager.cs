@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using Microsoft.Extensions.Logging;
 
-namespace K4GOTV;
+namespace Absynthium_Demo;
 
 public static class FileManager
 {

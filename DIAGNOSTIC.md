@@ -1,4 +1,6 @@
-# K4-GOTV 2.1.7-diagnostic.1
+# Absynthium_Demo — historique du diagnostic 2.1.7
+
+Ce document archive le diagnostic de l'ancienne version K4-GOTV. Ses noms de DLL et ses instructions d'installation concernent cette ancienne version. Pour Absynthium_Demo 3.0.0, utiliser [MIGRATION.md](MIGRATION.md) et [README.md](README.md).
 
 Cette variante sert à comparer la fluidité avec la version 2.1.6. La disparition des saccades n'a pas encore été vérifiée sur un serveur CS2.
 

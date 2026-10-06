@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 using CounterStrikeSharp.API.Core;
 
-namespace K4GOTV;
+namespace Absynthium_Demo;
 
 public sealed class PluginConfig : BasePluginConfig
 {
@@ -19,7 +20,7 @@ public sealed class PluginConfig : BasePluginConfig
 	public FtpSettings Ftp { get; set; } = new FtpSettings();
 
 	[JsonPropertyName("ConfigVersion")]
-	public override int Version { get; set; } = 13;
+	public override int Version { get; set; } = 14;
 
 	public class GeneralSettings
 	{
@@ -42,7 +43,7 @@ public sealed class PluginConfig : BasePluginConfig
 		public bool LogDeletions { get; set; } = true;
 
 		[JsonPropertyName("default-file-name")]
-		public string DefaultFileName { get; set; } = "demo";
+		public string DefaultFileName { get; set; } = "Absynthium_Demo";
 
 		[JsonPropertyName("regular-file-naming-pattern")]
 		public string RegularFileNamingPattern { get; set; } = "{fileName}_{map}_{date}_{time}";
@@ -75,22 +76,25 @@ public sealed class PluginConfig : BasePluginConfig
 		public bool WebhookUploadFile { get; set; } = true;
 
 		[JsonPropertyName("webhook-name")]
-		public string WebhookName { get; set; } = "CSGO Demo Bot";
+		public string WebhookName { get; set; } = "Absynthium_Demo";
 
 		[JsonPropertyName("embed-title")]
-		public string EmbedTitle { get; set; } = "New CSGO Demo Available";
+		public string EmbedTitle { get; set; } = "Démo disponible";
 
 		[JsonPropertyName("message-text")]
-		public string MessageText { get; set; } = "@everyone New CSGO Demo Available!";
+		public string MessageText { get; set; } = "";
 
 		[JsonPropertyName("server-boost")]
 		public int ServerBoost { get; set; } = 0;
+
+		[JsonPropertyName("payload")]
+		public JsonObject Payload { get; set; } = DiscordPayload.CreateDefault();
 	}
 
 	public class AutoRecordSettings
 	{
 		[JsonPropertyName("enabled")]
-		public bool Enabled { get; set; } = false;
+		public bool Enabled { get; set; } = true;
 
 		[JsonPropertyName("crop-rounds")]
 		public bool CropRounds { get; set; } = false;

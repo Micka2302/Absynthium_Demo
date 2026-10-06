@@ -1,4 +1,7 @@
 {
-  "k4.general.prefix": "{silver}[Absynthium - Demo]",
-  "k4.demo.start": "{white}Recording requested for demo {lime}{0}"
+  "absynthium_demo.general.prefix": "{silver}[Absynthium_Demo]",
+  "absynthium_demo.demo.start": "{white}Starting recording.",
+  "absynthium_demo.demo.stop": "{white}Recording finished.",
+  "absynthium_demo.demo.current": "{white}Current demo: {lime}{0}",
+  "absynthium_demo.demo.none": "{white}No demo is currently being recorded."
 }

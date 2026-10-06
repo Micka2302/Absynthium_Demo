@@ -10,15 +10,15 @@ using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Core.Translations;
 using Microsoft.Extensions.Logging;
 
-namespace K4GOTV;
+namespace Absynthium_Demo;
 
 [MinimumApiVersion(375)]
 public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 {
-	public override string ModuleName => "K4-GOTV";
+	public override string ModuleName => "Absynthium_Demo";
 	public override string ModuleDescription => "Advanced GOTV handler with Discord and FTP integration";
-	public override string ModuleVersion => "2.1.7-diagnostic.1";
-	public override string ModuleAuthor => "K4ryuu @ KitsuneLab";
+	public override string ModuleVersion => "3.0.0";
+	public override string ModuleAuthor => "Absynthium / K4ryuu @ KitsuneLab";
 
 	public required PluginConfig Config { get; set; } = new PluginConfig();
 
@@ -28,6 +28,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 	private int maxFileSizeInMB = 25;
 	private string demoDirectoryPath = string.Empty;
 	private bool mapChangePending = false;
+	private bool announceMapEndStop;
 	private string? forwardedRecordPath;
 	private int recordingGeneration;
 	private string[] recordingPaths = [];
@@ -40,6 +41,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
 	public override void Load(bool hotReload)
 	{
+		AddCommand("css_demo", "Display the current demo filename.", CommandDemo);
 		AddCommandListener("tv_record", CommandListener_Record, HookMode.Pre);
 		AddCommandListener("tv_stoprecord", CommandListener_StopRecord, HookMode.Post);
 		AddCommandListener("changelevel", CommandListener_Changelevel, HookMode.Pre);
@@ -49,17 +51,11 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
 		RegisterEventHandler((EventCsWinPanelMatch @event, GameEventInfo info) =>
 		{
-			mapChangePending = true;
-			Server.ExecuteCommand("tv_stoprecord");
+			StopRecordingForMapEnd();
 			return HookResult.Continue;
 		});
 
-		RegisterListener<Listeners.OnMapEnd>(() =>
-		{
-			mapChangePending = true;
-			if (!string.IsNullOrEmpty(fileName))
-				Server.ExecuteCommand("tv_stoprecord");
-		});
+		RegisterListener<Listeners.OnMapEnd>(StopRecordingForMapEnd);
 
 		RegisterListener<Listeners.OnMapStart>((mapName) =>
 		{
@@ -91,7 +87,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 		});
 
 		EnsureDemoDirectory(Config);
-		Logger.LogInformation("K4-GOTV {Version} loaded: recording directly in {DemoDirectory} using configured filenames and absolute paths. Diagnostic build: no file confirmation polling, confirmation timeout or periodic recording retry.", ModuleVersion, DemoDirectory);
+		Logger.LogInformation("Absynthium_Demo {Version} loaded: recording directly in {DemoDirectory} using configured filenames and absolute paths. No file confirmation polling or periodic recording retry.", ModuleVersion, DemoDirectory);
 
 		if (Config.AutoRecord.StopOnIdle)
 		{
@@ -171,11 +167,20 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
 	private HookResult CommandListener_Changelevel(CCSPlayerController? player, CommandInfo info)
 	{
-		mapChangePending = true;
-		if (!string.IsNullOrEmpty(fileName))
-			Server.ExecuteCommand("tv_stoprecord");
+		StopRecordingForMapEnd();
 
 		return HookResult.Continue;
+	}
+
+	private void StopRecordingForMapEnd()
+	{
+		mapChangePending = true;
+		if (string.IsNullOrEmpty(fileName))
+			return;
+
+		// A reserved start that has not reached the engine has nothing to announce.
+		announceMapEndStop = forwardedRecordPath == null;
+		Server.ExecuteCommand("tv_stoprecord");
 	}
 
 	private HookResult CommandListener_Record(CCSPlayerController? player, CommandInfo info)
@@ -228,9 +233,9 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 				return;
 			Logger.LogInformation("Requesting demo recording: {DemoPath}", commandPath);
 			Server.ExecuteCommand($"tv_record \"{commandPath}\"");
-			AnnounceRecordingRequest();
+			AnnounceRecording("absynthium_demo.demo.start", "Starting recording.");
 		});
-		// Diagnostic build: leave recording to the engine without polling the file
+		// Leave recording to the engine without polling the file
 		// or stopping/retrying because its creation could not be confirmed.
 		// An unsuccessful request stays reserved until a stop or map reset.
 		return HookResult.Stop;
@@ -247,6 +252,18 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 			Server.ExecuteCommand("tv_record");
 	}
 
+	private void CommandDemo(CCSPlayerController? player, CommandInfo command)
+	{
+		if (player != null && (!player.IsValid || player.IsBot || player.IsHLTV))
+			return;
+
+		bool hasRecording = fileName != null && forwardedRecordPath == null;
+		string key = hasRecording ? "absynthium_demo.demo.current" : "absynthium_demo.demo.none";
+		string message = Localizer.ForPlayer(player, key, $"{fileName}.dem");
+		string prefix = Localizer.ForPlayer(player, "absynthium_demo.general.prefix");
+		command.ReplyToCommand($"{prefix} {message}");
+	}
+
 	private HookResult CommandListener_StopRecord(CCSPlayerController? player, CommandInfo info)
 	{
 		if (string.IsNullOrEmpty(fileName))
@@ -257,6 +274,12 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
 		try
 		{
+			if (announceMapEndStop)
+			{
+				announceMapEndStop = false;
+				AnnounceRecording("absynthium_demo.demo.stop", "Recording finished.");
+			}
+
 			// The post hook runs after the engine's stop command; ZipDemoAsync also
 			// retries if the final file has not been made available yet.
 			ProcessUpload(fileName, recordingPaths, Server.EngineTime - DemoStartTime >= Config.General.MinimumDemoDuration);
@@ -292,9 +315,9 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 			["date"] = nowLocal.ToString("yyyy-MM-dd"),
 			["time"] = nowLocal.ToString("HH:mm:ss"),
 			["timedate"] = nowLocal.ToString("yyyy-MM-dd HH:mm:ss"),
-			["length"] = $"{demoLength.Minutes:00}:{demoLength.Seconds:00}",
+			["length"] = $"{(int)demoLength.TotalHours:00}:{demoLength.Minutes:00}:{demoLength.Seconds:00}",
 			["round"] = roundLabel,
-			["ftp_link"] = "Not uploaded to FTP.",
+			["ftp_link"] = string.Empty,
 			["player_count"] = playerCount.ToString(),
 			["server_name"] = serverName,
 			["fileName"] = Path.GetFileNameWithoutExtension(fileName),
@@ -303,6 +326,8 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 			["fileSizeInKB"] = "0"
 		};
 
+		// Snapshot the template before background processing or a config reload.
+		var payloadTemplate = (System.Text.Json.Nodes.JsonObject)Config.Discord.Payload.DeepClone();
 		pendingDemoNames.TryAdd(fileName, 0);
 		_ = Task.Run(async () =>
 		{
@@ -324,27 +349,21 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 			    {
 			        string ftpLink = await uploadService.UploadToFtpAsync(zipPath, ftpRemotePath);
 			        placeholders["ftp_link"] = ftpLink;
+			        if (Config.General.LogUploads)
+			            Logger.LogInformation("Demo uploaded via FTP: {FileName}", fileName);
 			        if (Config.Ftp.RetentionEnabled)
 			            AppendRetentionRecord(ftpRemotePath);
 			    }
 
-			    string payloadTemplatePath = Path.Combine(ModuleDirectory, "payload.json");
-			    if (!File.Exists(payloadTemplatePath))
-			    {
-			        Logger.LogError($"Payload template not found: {payloadTemplatePath}");
-			        return;
-			    }
-
-			    string payloadTemplate = await File.ReadAllTextAsync(payloadTemplatePath);
 			    if (fileSizeInBytes / (1024 * 1024) > maxFileSizeInMB)
 			    {
 			        Logger.LogWarning($"Zip file size ({fileSizeInBytes / (1024 * 1024)}MB) exceeds Discord's {maxFileSizeInMB}MB limit.");
 			        placeholders["file_size_warning"] = $"Warning: File size ({fileSizeInBytes / (1024 * 1024)}MB) exceeds Discord limit. Please use the FTP link.";
 			    }
 
-			    string payloadJson = ReplacePlaceholders(payloadTemplate, placeholders);
 			    if (!string.IsNullOrWhiteSpace(Config.Discord.WebhookURL))
 			    {
+			        string payloadJson = DiscordPayload.Render(payloadTemplate, placeholders);
 			        using var httpClient = new HttpClient();
 			        var content = new MultipartFormDataContent
 			        {
@@ -391,6 +410,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 	private void ResetVariables()
 	{
 		recordingGeneration++;
+		announceMapEndStop = false;
 		forwardedRecordPath = null;
 		recordingPaths = [];
 		DemoStartTime = 0.0;
@@ -407,9 +427,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		foreach (var kv in placeholders)
 		{
-			// Replace newlines in placeholder values with escaped newlines for Discord JSON
-			string value = kv.Value.Replace("\r\n", "\\n").Replace("\n", "\\n");
-			input = input.Replace($"{{{kv.Key}}}", value);
+			input = input.Replace($"{{{kv.Key}}}", kv.Value);
 		}
 
 		return input;
@@ -433,8 +451,13 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
 	public void OnConfigParsed(PluginConfig config)
 	{
-		if (config.Version < Config.Version)
-			Logger.LogWarning("Config version mismatch (Expected: {0} | Current: {1})", Config.Version, config.Version);
+		if (config.Version < 14)
+		{
+			Logger.LogInformation("Upgrading configuration to version 14 with an embedded Discord payload.");
+			config.Version = 14;
+		}
+		if (config.Discord.Payload == null || config.Discord.Payload.Count == 0)
+			config.Discord.Payload = DiscordPayload.CreateDefault();
 
 		if (string.IsNullOrWhiteSpace(config.General.DemoDirectory))
 		{
@@ -554,7 +577,7 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 		}
 	}
 
-	private void AnnounceRecordingRequest()
+	private void AnnounceRecording(string translationKey, string fallback)
 	{
 		if (string.IsNullOrEmpty(fileName))
 			return;
@@ -564,8 +587,8 @@ public sealed partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 			if (target?.IsValid != true || target.IsBot || target.IsHLTV)
 				continue;
 
-			string prefix = Localizer?.ForPlayer(target, "k4.general.prefix") ?? "{silver}[K4-GOTV]";
-			string message = Localizer?.ForPlayer(target, "k4.demo.start", fileName) ?? $"Recording requested for demo {fileName}";
+			string prefix = Localizer?.ForPlayer(target, "absynthium_demo.general.prefix") ?? "{silver}[Absynthium_Demo]";
+			string message = Localizer?.ForPlayer(target, translationKey, fileName) ?? fallback;
 			target.PrintToChat($"{prefix} {message}");
 		}
 	}

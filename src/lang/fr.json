@@ -1,0 +1,7 @@
+{
+  "absynthium_demo.general.prefix": "{silver}[Absynthium_Demo]",
+  "absynthium_demo.demo.start": "{white}Lancement de l'enregistrement.",
+  "absynthium_demo.demo.stop": "{white}Enregistrement terminé.",
+  "absynthium_demo.demo.current": "{white}Démo en cours : {lime}{0}",
+  "absynthium_demo.demo.none": "{white}Aucune démo en cours d'enregistrement."
+}

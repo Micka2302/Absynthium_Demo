@@ -9,5 +9,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <Compile Include="../src/FileManager.cs" Link="FileManager.cs" />
     <Compile Include="../src/DemoPaths.cs" Link="DemoPaths.cs" />
+    <Compile Include="../src/DiscordPayload.cs" Link="DiscordPayload.cs" />
+    <Compile Include="../src/Config.cs" Link="Config.cs" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.375" />
   </ItemGroup>
 </Project>
