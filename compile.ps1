@@ -28,5 +28,19 @@ Copy-Item -LiteralPath (Join-Path $root 'LICENSE.md') -Destination $stage
 
 $zipPath = Join-Path $compiledRoot "$pluginName.zip"
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zipPath -Force
-Write-Host "[OK] Plugin: $pluginTarget"
+
+# Keep an unpacked plugin in a stable location for direct server installation.
+$unpackedParent = [IO.Path]::GetFullPath((Join-Path $compiledRoot 'counterstrikesharp/plugins'))
+$unpackedPlugin = [IO.Path]::GetFullPath((Join-Path $unpackedParent $pluginName))
+if ([IO.Path]::GetDirectoryName($unpackedPlugin) -ne $unpackedParent -or
+    [IO.Path]::GetFileName($unpackedPlugin) -cne 'Absynthium_Demo') {
+    throw 'Unexpected unpacked plugin output path.'
+}
+if (Test-Path -LiteralPath $unpackedPlugin) {
+    Remove-Item -LiteralPath $unpackedPlugin -Recurse -Force
+}
+New-Item -ItemType Directory -Path $unpackedParent -Force | Out-Null
+Copy-Item -LiteralPath $pluginTarget -Destination $unpackedPlugin -Recurse
+
+Write-Host "[OK] Plugin: $unpackedPlugin"
 Write-Host "[OK] Archive: $zipPath"

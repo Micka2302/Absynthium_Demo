@@ -19,6 +19,8 @@ Il n'y a aucun mode `demo-request` : les uploads configurés sont traités autom
 
 Compiler avec le SDK .NET 10 via `./compile.ps1` ou `compile.cmd`. L'archive `compiled/Absynthium_Demo.zip` contient le plugin, ses dépendances, les traductions et un exemple de configuration. Extraire son dossier `counterstrikesharp` dans `game/csgo/addons/`.
 
+La compilation produit également le plugin sans ZIP dans `compiled/counterstrikesharp/plugins/Absynthium_Demo/`, avec la DLL, les dépendances et les traductions. Copier ce dossier dans `game/csgo/addons/counterstrikesharp/plugins/` pour une installation directe. Ce dossier de sortie est remplacé à chaque compilation afin d'éviter de conserver d'anciens fichiers.
+
 Le projet cible CounterStrikeSharp API **1.0.375**, .NET **10** et FluentFTP **53.0.2**. Le serveur doit disposer d'une installation CounterStrikeSharp complète et compatible, avec son runtime et Metamod. Mettre à jour seulement la DLL du plugin ne met pas à jour ces composants.
 
 Configurer `tv_enable 1` avant le chargement de la map et `tv_autorecord 0`. La configuration se trouve dans `addons/counterstrikesharp/configs/plugins/Absynthium_Demo/Absynthium_Demo.json`. Les démos vont par défaut dans `game/csgo/discord_demos` et utilisent un chemin absolu pour éviter une redirection sous Metamod.
